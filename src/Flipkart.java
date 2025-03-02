@@ -19,8 +19,14 @@ public class Flipkart {
         this.orderPlacedObservers = new ArrayList<>();
     }
 
+    // adding order placed observer
     public void addOrderPlacedObservers(OrderPlacedObservers opo) {
         this.orderPlacedObservers.add(opo);
+    }
+
+    //removing order placed observer
+    public void removeOrderPlacedObservers(OrderPlacedObservers opo) {
+        this.orderPlacedObservers.remove(opo);
     }
 
     // calling all order observers
@@ -29,7 +35,6 @@ public class Flipkart {
             opo.onOrderPlaced(order);
         }
     }
-
 
     // singleton pattern
     public static  Flipkart getInstance(){
@@ -65,6 +70,7 @@ public class Flipkart {
     {
         this.products.put(product.productId, product );
     }
+
     public void updateProduct(Product product)
     {
         this.products.remove(product.productId);
@@ -102,6 +108,7 @@ public class Flipkart {
 
     private boolean checkInventory(ArrayList<Product> products)
     {
+        System.out.println("checking inventory if your fav products are available...");
         synchronized(this) {
 
             for (int i = 0; i < products.size(); i++) {
@@ -123,6 +130,7 @@ public class Flipkart {
 
     private boolean processPayment(String paymentMethod){
 
+        System.out.println("Processing payment using ");
         // adapter and factory design patterns
         // also depicts Liskov's substitution principle
         PaymentGatewayFactory pg = new PaymentGatewayFactory(); // create an instance
@@ -133,6 +141,7 @@ public class Flipkart {
 
     private void registerOrder(User user, Order order)
     {
+        System.out.println("registering your order, so that we don't forget later :D");
         if(this.orders.containsKey(user.userId))
         {
             this.orders.get(user.userId).add(order);
@@ -147,6 +156,7 @@ public class Flipkart {
 
     private void adjustInventoryPostOrder(Order order)
     {
+        System.out.println("Reducing the inventory for products bought..");
         for(int i=0;i<order.orderProducts.size();i++)
         {
             Product product = order.orderProducts.get(i);
@@ -162,11 +172,14 @@ public class Flipkart {
             // payment
             if(this.processPayment(paymentMethod))
             {
+                System.out.println("Yay, Payment Successful!");
                 // place order and manage inventory
                 this.registerOrder(user, order);
                 this.adjustInventoryPostOrder(order);
 
+
                 // call all order observers - payment gw, notif services, couriers etc
+                System.out.println("calling all order observers - notif, courier etc");
                 this.callOrderPlacedObservers(order);
             }
         }
