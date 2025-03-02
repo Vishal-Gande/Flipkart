@@ -80,13 +80,40 @@ public class Flipkart {
         }
     }
 
+
     public void dropCart(User user)
     {
         this.carts.remove(user.userId);
     }
 
-    public void placeOrder(User user, Order order )
+    public void placeOrder(User user, Order order , String paymentMethod)
     {
+        // check inventory and lock the product for user
+        synchronized(this) {
+
+            for (int i = 0; i < order.orderProducts.size(); i++) {
+                Product product = order.orderProducts.get(i);
+                if (this.products.containsKey(product.productId) && this.products.get(product.productId).quantity > 0) {
+                    System.out.println("product:" + product.productName + " is available");
+                } else {
+                    System.out.println("product:" + product.productName + " is not available");
+                    System.out.println("Order cannot be placed");
+                }
+            }
+        }
+
+
+        // Payment gateway
+
+        PaymentGatewayFactory pg = new PaymentGatewayFactory(); // create an instance
+        PaymentGateway gateway = pg.getPaymentGateway(paymentMethod);
+        
+        gateway.upiPayment();
+
+        // take feedback from payment, and proceed only if successful
+
+        // finalise order
+
         if(this.orders.containsKey(user.userId))
         {
             this.orders.get(user.userId).add(order);
@@ -96,6 +123,14 @@ public class Flipkart {
             ArrayList<Order> orders = new ArrayList<>();
             orders.add(order);
             this.orders.put(user.userId, orders);
+        }
+
+
+        // adjust inventory
+        for(int i=0;i<order.orderProducts.size();i++)
+        {
+            Product product = order.orderProducts.get(i);
+            this.products.get(product.productId).quantity--;
         }
 
         // call all order observers - payment gw, notif services, couriers etc
