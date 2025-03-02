@@ -1,3 +1,5 @@
+// factory design pattern
+
 public class PaymentGatewayFactory {
 
     PaymentGateway getPaymentGateway(String paymentGateway) {

@@ -7,15 +7,29 @@ public class Flipkart {
 
     private HashMap<Integer, Product> products; // product id, product
     private HashMap<Integer, User> users; // user id, user
-    private HashMap<Integer, ArrayList<Order>> orders; // order ID as key, his orders as values
+    private HashMap<Integer, ArrayList<Order>> orders; // order ID as key, orders as values
     private HashMap<Integer, ArrayList<Product>> carts; // customer ID as key, products in cart as values
+    private ArrayList<OrderPlacedObservers> orderPlacedObservers;
 
     private Flipkart(){
         this.products = new HashMap<>();
         this.users = new HashMap<>();
         this.orders = new HashMap<>();
         this.carts = new HashMap<>();
+        this.orderPlacedObservers = new ArrayList<>();
     }
+
+    public void addOrderPlacedObservers(OrderPlacedObservers opo) {
+        this.orderPlacedObservers.add(opo);
+    }
+
+    // calling all order observers
+    private void callOrderPlacedObservers(Order order) {
+        for (OrderPlacedObservers opo : orderPlacedObservers) {
+            opo.onOrderPlaced(order);
+        }
+    }
+
 
     // singleton pattern
     public static  Flipkart getInstance(){
@@ -86,34 +100,39 @@ public class Flipkart {
         this.carts.remove(user.userId);
     }
 
-    public void placeOrder(User user, Order order , String paymentMethod)
+    private boolean checkInventory(ArrayList<Product> products)
     {
-        // check inventory and lock the product for user
         synchronized(this) {
 
-            for (int i = 0; i < order.orderProducts.size(); i++) {
-                Product product = order.orderProducts.get(i);
+            for (int i = 0; i < products.size(); i++) {
+
+                Product product = products.get(i);
                 if (this.products.containsKey(product.productId) && this.products.get(product.productId).quantity > 0) {
                     System.out.println("product:" + product.productName + " is available");
-                } else {
+                }
+                else {
                     System.out.println("product:" + product.productName + " is not available");
                     System.out.println("Order cannot be placed");
+                    return false;
                 }
             }
+            return true;
         }
 
+    }
 
-        // Payment gateway
+    private boolean processPayment(String paymentMethod){
 
+        // adapter and factory design patterns
+        // also depicts Liskov's substitution principle
         PaymentGatewayFactory pg = new PaymentGatewayFactory(); // create an instance
         PaymentGateway gateway = pg.getPaymentGateway(paymentMethod);
-        
         gateway.upiPayment();
+        return true;
+    }
 
-        // take feedback from payment, and proceed only if successful
-
-        // finalise order
-
+    private void registerOrder(User user, Order order)
+    {
         if(this.orders.containsKey(user.userId))
         {
             this.orders.get(user.userId).add(order);
@@ -124,16 +143,33 @@ public class Flipkart {
             orders.add(order);
             this.orders.put(user.userId, orders);
         }
+    }
 
-
-        // adjust inventory
+    private void adjustInventoryPostOrder(Order order)
+    {
         for(int i=0;i<order.orderProducts.size();i++)
         {
             Product product = order.orderProducts.get(i);
             this.products.get(product.productId).quantity--;
         }
+    }
 
-        // call all order observers - payment gw, notif services, couriers etc
+    public void placeOrder(User user, Order order , String paymentMethod)
+    {
+        // check inventory and lock the product for user
+        if(this.checkInventory(order.orderProducts))
+        {
+            // payment
+            if(this.processPayment(paymentMethod))
+            {
+                // place order and manage inventory
+                this.registerOrder(user, order);
+                this.adjustInventoryPostOrder(order);
+
+                // call all order observers - payment gw, notif services, couriers etc
+                this.callOrderPlacedObservers(order);
+            }
+        }
     }
 
     public void displayOrders(User user)
@@ -153,7 +189,5 @@ public class Flipkart {
     {
         return this.carts.get(user.userId);
     }
-
-
 
 }

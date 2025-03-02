@@ -1,3 +1,5 @@
+// adapter design pattern
+
 public class RazorpayAdapter implements PaymentGateway{
 
     Razorpay razorpay = new Razorpay();

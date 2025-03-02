@@ -3,7 +3,13 @@ public class DemoFlipkart {
     public static void main(String[] args) {
 
         Flipkart flipkart = Flipkart.getInstance();
+
+        // helps check if singleton is correctly implemented
         Flipkart flipkart2 = Flipkart.getInstance();
+
+        // calls observer's constructor, which further calls add observer fn of flipkart
+        CourierService cs = new CourierService(flipkart);
+        NotificationService ns = new NotificationService(flipkart);
 
         User user1 = new User("vish", 1, "vish@gmail.com");
         User user2 = new User("prav", 2, "prav@gmail.com");

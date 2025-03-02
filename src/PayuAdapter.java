@@ -1,3 +1,6 @@
+
+// adapter design pattern
+
 import java.util.Scanner;
 
 public class PayuAdapter implements PaymentGateway{
